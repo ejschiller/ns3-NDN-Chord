@@ -47,7 +47,7 @@ NS_LOG_COMPONENT_DEFINE ("PointToPointEpcHelper");
 NS_OBJECT_ENSURE_REGISTERED (PointToPointEpcHelper);
 
 
-PointToPointEpcHelper::PointToPointEpcHelper () 
+PointToPointEpcHelper::PointToPointEpcHelper (const char* s1ubaseaddress = NULL, const char* x2baseaddress = NULL, const char* uebaseaddress = NULL) 
   : m_gtpuUdpPort (2152)  // fixed by the standard
 {
   NS_LOG_FUNCTION (this);
@@ -55,12 +55,23 @@ PointToPointEpcHelper::PointToPointEpcHelper ()
   // since we use point-to-point links for all S1-U links, 
   // we use a /30 subnet which can hold exactly two addresses 
   // (remember that net broadcast and null address are not valid)
-  m_s1uIpv4AddressHelper.SetBase ("10.0.0.0", "255.255.255.252");
+  
+  if(s1ubaseaddress)
+	m_s1uIpv4AddressHelper.SetBase (s1ubaseaddress, "255.255.255.252");
+  else
+  	m_s1uIpv4AddressHelper.SetBase ("10.0.0.0", "255.255.255.252");
 
-  m_x2Ipv4AddressHelper.SetBase ("12.0.0.0", "255.255.255.252");
+  if(x2baseaddress)
+        m_x2Ipv4AddressHelper.SetBase (x2baseaddress, "255.255.255.252");
+  else
+  	m_x2Ipv4AddressHelper.SetBase ("12.0.0.0", "255.255.255.252");
 
   // we use a /8 net for all UEs
-  m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0");
+
+  if(uebaseaddress)
+	m_ueAddressHelper.SetBase (uebaseaddress, "255.0.0.0");
+  else
+  	m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0");
   
   // create SgwPgwNode
   m_sgwPgw = CreateObject<Node> ();
