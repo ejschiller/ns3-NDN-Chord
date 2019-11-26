@@ -71,7 +71,7 @@ PointToPointEpcHelper::PointToPointEpcHelper (const char* s1ubaseaddress = NULL,
   if(uebaseaddress)
 	m_ueAddressHelper.SetBase (uebaseaddress, "255.0.0.0");
   else
-  	m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0");
+  	m_ueAddressHelper.SetBase ("7.0.0.0", "255.255.0.0"); // changed the mask from 8 to 16
   
   // create SgwPgwNode
   m_sgwPgw = CreateObject<Node> ();
