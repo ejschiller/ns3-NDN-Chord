@@ -86,6 +86,8 @@ main (int argc, char *argv[])
   std::vector<Ipv4InterfaceContainer> IndependentInterface(numberOfNetworks);
   std::vector<Ipv4Address> IndependentremoteHostAddr(numberOfNetworks);
   std::vector<Ipv4StaticRoutingHelper> Independentipv4RoutingHelper(numberOfNetworks);
+  std::vector<NodeContainer> IndependentueNodes(numberOfNetworks);
+  std::vector<NodeContainer> IndependentenbNodes(numberOfNetworks);
 
   for(uint16_t nn = 0; nn < numberOfNetworks; nn++) {
 
@@ -93,7 +95,20 @@ main (int argc, char *argv[])
 	lteHelper = CreateObject<LteHelper> ();
 
         Ptr<PointToPointEpcHelper>& epcHelper = IndependentEpcs[nn];
-	epcHelper = CreateObject<PointToPointEpcHelper> ();
+
+	// s1-u interface on 2.(nn).0.0, mask defined in src/lte/helper/point-to-point-epc-helper.cc
+	char s1ubaseaddress[16];
+	std::snprintf(s1ubaseaddress, 16, "2.%u.0.0", nn);
+	
+	// x2 interface on 3.(nn).0.0, mask defined in src/lte/helper/point-to-point-epc-helper.cc
+	char x2baseaddress[16];
+	std::snprintf(x2baseaddress, 16, "3.%u.0.0", nn);
+
+	// ue base interface 4.(nn).0.0, mask defined in src/lte/helper/point-to-point-epc-helper.cc
+	char uebaseaddress[16];
+	std::snprintf(uebaseaddress, 16, "4.%u.0.0", nn);
+
+	epcHelper = CreateObject<PointToPointEpcHelper> (s1ubaseaddress, x2baseaddress, uebaseaddress);
         lteHelper->SetEpcHelper (epcHelper);
 
 	Ptr<Node>& pgw = IndependentPgws[nn];
@@ -110,7 +125,6 @@ main (int argc, char *argv[])
   	Ipv4AddressHelper& ipv4h = IndependentAddress[nn];
 
 	// main interface on 1.(nn).0.0/16
-
 	std::snprintf(addressing, 16, "1.%u.0.0", nn);
   	ipv4h.SetBase (addressing , "255.255.0.0");
 	Ipv4InterfaceContainer& internetIpIfaces = IndependentInterface[nn];
@@ -122,6 +136,26 @@ main (int argc, char *argv[])
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
   	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (addressing), Ipv4Mask ("255.0.0.0"), nn);
 
+	NodeContainer& ueNodes = IndependentueNodes[nn];
+  	NodeContainer& enbNodes = IndependentenbNodes[nn];
+
+  	enbNodes.Create(numberOfNodes);
+  	ueNodes.Create(numberOfNodes);
+
+	Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
+
+	for (uint16_t i = 0; i < numberOfNodes; i++) {
+      		positionAlloc->Add (Vector(distance * i, 0, 0));
+    	}
+
+  	MobilityHelper mobility;
+  	mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  	mobility.SetPositionAllocator(positionAlloc);
+	mobility.Install(enbNodes);
+	mobility.Install(ueNodes);
+
+
+
 
   }
 
@@ -131,26 +165,7 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   // cmd.Parse(argc, argv);
 
-  Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
-  remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
-
-  NodeContainer ueNodes;
-  NodeContainer enbNodes;
-  enbNodes.Create(numberOfNodes);
-  ueNodes.Create(numberOfNodes);
-
   // Install Mobility Model
-  Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
-  for (uint16_t i = 0; i < numberOfNodes; i++)
-    {
-      positionAlloc->Add (Vector(distance * i, 0, 0));
-    }
-  MobilityHelper mobility;
-  mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-  mobility.SetPositionAllocator(positionAlloc);
-  mobility.Install(enbNodes);
-  mobility.Install(ueNodes);
-
   // Install LTE Devices to the nodes
   NetDeviceContainer enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
   NetDeviceContainer ueLteDevs = lteHelper->InstallUeDevice (ueNodes);
