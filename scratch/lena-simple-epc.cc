@@ -88,7 +88,12 @@ main (int argc, char *argv[])
   std::vector<Ipv4StaticRoutingHelper> Independentipv4RoutingHelper(numberOfNetworks);
   std::vector<NodeContainer> IndependentueNodes(numberOfNetworks);
   std::vector<NodeContainer> IndependentenbNodes(numberOfNetworks);
-
+  std::vector<Ptr<ListPositionAllocator>> IndependentPositionAllocators(numberOfNetworks);
+  std::vector<MobilityHelper> IndependentMobilityHelpers(numberOfNetworks); 
+  std::vector<NetDeviceContainer> IndependentueDevices(numberOfNetworks);
+  std::vector<NetDeviceContainer> IndependentenbDevices(numberOfNetworks);
+  std::vector<Ipv4InterfaceContainer> IndependentueIpIfaces(numberOfNetworks);
+ 
   for(uint16_t nn = 0; nn < numberOfNetworks; nn++) {
 
 	Ptr<LteHelper>& lteHelper = IndependentNetworks[nn];
@@ -126,10 +131,12 @@ main (int argc, char *argv[])
 
 	// main interface on 1.(nn).0.0/16
 	std::snprintf(addressing, 16, "1.%u.0.0", nn);
+
   	ipv4h.SetBase (addressing , "255.255.0.0");
 	Ipv4InterfaceContainer& internetIpIfaces = IndependentInterface[nn];
   	internetIpIfaces = ipv4h.Assign (internetDevices);
 	Ipv4Address& remoteHostAddr = IndependentremoteHostAddr[nn];
+
   	// interface 0 is localhost, nn is the p2p device
   	remoteHostAddr = internetIpIfaces.GetAddress (nn);
 	Ipv4StaticRoutingHelper& ipv4RoutingHelper = Independentipv4RoutingHelper[numberOfNetworks];
@@ -142,53 +149,52 @@ main (int argc, char *argv[])
   	enbNodes.Create(numberOfNodes);
   	ueNodes.Create(numberOfNodes);
 
-	Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
+	Ptr<ListPositionAllocator>& positionAlloc = IndependentPositionAllocators[nn];
+	positionAlloc = CreateObject<ListPositionAllocator> ();
 
 	for (uint16_t i = 0; i < numberOfNodes; i++) {
       		positionAlloc->Add (Vector(distance * i, 0, 0));
     	}
 
-  	MobilityHelper mobility;
+	MobilityHelper& mobility = IndependentMobilityHelpers[nn];
+
   	mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
   	mobility.SetPositionAllocator(positionAlloc);
 	mobility.Install(enbNodes);
 	mobility.Install(ueNodes);
 
+	// Install Mobility Model
+	// Install LTE Devices to the nodes
+
+	NetDeviceContainer& enbLteDevs = IndependentenbDevices[nn];
+	enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
+
+	NetDeviceContainer& ueLteDevs = IndependentueDevices[nn];
+	ueLteDevs = lteHelper->InstallUeDevice (ueNodes);
+
+	// Install the IP stack on the UEs
+	internet.Install (ueNodes);
+
+	// Assign IP address to UEs, and install applications
+	Ipv4InterfaceContainer& ueIpIface = IndependentueIpIfaces[nn];
+	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueLteDevs));
+
+	// default route on UEs
+	for (uint32_t u = 0; u < ueNodes.GetN (); ++u) {
+		Ptr<Node> ueNode = ueNodes.Get (u);
+		// Set the default gateway for the UE
+		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
+		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
+	}
 
 
-
-  }
-
-  // ConfigStore inputConfig;
-  // inputConfig.ConfigureDefaults();
-
-  // parse again so you can override default values from the command line
-  // cmd.Parse(argc, argv);
-
-  // Install Mobility Model
-  // Install LTE Devices to the nodes
-  NetDeviceContainer enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
-  NetDeviceContainer ueLteDevs = lteHelper->InstallUeDevice (ueNodes);
-
-  // Install the IP stack on the UEs
-  internet.Install (ueNodes);
-  Ipv4InterfaceContainer ueIpIface;
-  ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueLteDevs));
-  // Assign IP address to UEs, and install applications
-  for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
-    {
-      Ptr<Node> ueNode = ueNodes.Get (u);
-      // Set the default gateway for the UE
-      Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
-      ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
-    }
-
-  // Attach one UE per eNodeB
-  for (uint16_t i = 0; i < numberOfNodes; i++)
-      {
+	// Attach one UE per eNodeB
+  	for (uint16_t i = 0; i < numberOfNodes; i++) {
         lteHelper->Attach (ueLteDevs.Get(i), enbLteDevs.Get(i));
         // side effect: the default EPS bearer will be activated
       }
+
+  }
 
 
   // Install and start applications on UEs and remote host
@@ -197,6 +203,7 @@ main (int argc, char *argv[])
   uint16_t otherPort = 3000;
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
