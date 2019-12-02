@@ -55,7 +55,7 @@ public:
   /** 
    * Constructor
    */
-  PointToPointEpcHelper (char* = NULL, char* = NULL, char* = NULL);
+  PointToPointEpcHelper (const char* = NULL, const char* = NULL, const char* = NULL);
 
   /** 
    * Destructor

@@ -47,7 +47,7 @@ NS_LOG_COMPONENT_DEFINE ("PointToPointEpcHelper");
 NS_OBJECT_ENSURE_REGISTERED (PointToPointEpcHelper);
 
 
-PointToPointEpcHelper::PointToPointEpcHelper (const char* s1ubaseaddress = NULL, const char* x2baseaddress = NULL, const char* uebaseaddress = NULL) 
+PointToPointEpcHelper::PointToPointEpcHelper (const char* s1ubaseaddress, const char* x2baseaddress, const char* uebaseaddress) 
   : m_gtpuUdpPort (2152)  // fixed by the standard
 {
   NS_LOG_FUNCTION (this);
@@ -69,7 +69,7 @@ PointToPointEpcHelper::PointToPointEpcHelper (const char* s1ubaseaddress = NULL,
   // we use a /8 net for all UEs
 
   if(uebaseaddress)
-	m_ueAddressHelper.SetBase (uebaseaddress, "255.0.0.0");
+	m_ueAddressHelper.SetBase (uebaseaddress, "255.255.0.0");
   else
   	m_ueAddressHelper.SetBase ("7.0.0.0", "255.255.0.0"); // changed the mask from 8 to 16
   
