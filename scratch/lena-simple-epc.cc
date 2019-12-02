@@ -32,6 +32,7 @@
 //#include "ns3/gtk-config-store.h"
 #include <vector>
 #include <cstdio>
+#include <iostream>
 
 using namespace ns3;
 
@@ -102,18 +103,18 @@ main (int argc, char *argv[])
         Ptr<PointToPointEpcHelper>& epcHelper = IndependentEpcs[nn];
 
 	// s1-u interface on 2.(nn).0.0, mask defined in src/lte/helper/point-to-point-epc-helper.cc
-	char s1ubaseaddress[16];
-	std::snprintf(s1ubaseaddress, 16, "2.%u.0.0", nn);
-	
+	std::ostringstream s1ubaseaddress;
+	s1ubaseaddress << "2." << nn << ".0.0";
+
 	// x2 interface on 3.(nn).0.0, mask defined in src/lte/helper/point-to-point-epc-helper.cc
-	char x2baseaddress[16];
-	std::snprintf(x2baseaddress, 16, "3.%u.0.0", nn);
+	std::ostringstream x2baseaddress;
+	x2baseaddress << "3." << nn << ".0.0";
 
 	// ue base interface 4.(nn).0.0, mask defined in src/lte/helper/point-to-point-epc-helper.cc
-	char uebaseaddress[16];
-	std::snprintf(uebaseaddress, 16, "4.%u.0.0", nn);
+	std::ostringstream uebaseaddress;
+	uebaseaddress << "4." << nn << ".0.0";
 
-	epcHelper = CreateObject<PointToPointEpcHelper> (s1ubaseaddress, x2baseaddress, uebaseaddress);
+	epcHelper = CreateObject<PointToPointEpcHelper> (s1ubaseaddress.str().c_str(), x2baseaddress.str().c_str(), uebaseaddress.str().c_str());
         lteHelper->SetEpcHelper (epcHelper);
 
 	Ptr<Node>& pgw = IndependentPgws[nn];
@@ -126,13 +127,13 @@ main (int argc, char *argv[])
   	p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
   	NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 
-  	char addressing[16];
+  	std::ostringstream addressing;
   	Ipv4AddressHelper& ipv4h = IndependentAddress[nn];
 
 	// main interface on 1.(nn).0.0/16
-	std::snprintf(addressing, 16, "1.%u.0.0", nn);
+	addressing << "1." << nn << ".0.0";
 
-  	ipv4h.SetBase (addressing , "255.255.0.0");
+  	ipv4h.SetBase (addressing.str().c_str(), "255.255.0.0");
 	Ipv4InterfaceContainer& internetIpIfaces = IndependentInterface[nn];
   	internetIpIfaces = ipv4h.Assign (internetDevices);
 	Ipv4Address& remoteHostAddr = IndependentremoteHostAddr[nn];
@@ -141,7 +142,7 @@ main (int argc, char *argv[])
   	remoteHostAddr = internetIpIfaces.GetAddress (nn);
 	Ipv4StaticRoutingHelper& ipv4RoutingHelper = Independentipv4RoutingHelper[numberOfNetworks];
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
-  	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (addressing), Ipv4Mask ("255.0.0.0"), nn);
+  	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (addressing.str().c_str()), Ipv4Mask ("255.0.0.0"), nn);
 
 	NodeContainer& ueNodes = IndependentueNodes[nn];
   	NodeContainer& enbNodes = IndependentenbNodes[nn];
@@ -190,16 +191,13 @@ main (int argc, char *argv[])
 
 	// Attach one UE per eNodeB
   	for (uint16_t i = 0; i < numberOfNodes; i++) {
-        lteHelper->Attach (ueLteDevs.Get(i), enbLteDevs.Get(i));
-        // side effect: the default EPS bearer will be activated
-      }
+        	lteHelper->Attach (ueLteDevs.Get(i), enbLteDevs.Get(i));
+        }
 
   }
 
+/*
 
-  // Install and start applications on UEs and remote host
-  uint16_t dlPort = 1234;
-  uint16_t ulPort = 2000;
   uint16_t otherPort = 3000;
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
@@ -238,9 +236,18 @@ main (int argc, char *argv[])
           clientApps.Add (client.Install (ueNodes.Get(0)));
         }
     }
-  serverApps.Start (Seconds (0.01));
-  clientApps.Start (Seconds (0.01));
-  lteHelper->EnableTraces ();
+
+*/
+
+  //serverApps.Start (Seconds (0.01));
+  //clientApps.Start (Seconds (0.01));
+
+
+  for(uint16_t nn = 0; nn < numberOfNetworks; nn++) {
+	Ptr<LteHelper>& lteHelper = IndependentNetworks[nn];
+	lteHelper->EnableTraces ();
+  }
+
   // Uncomment to enable PCAP tracing
   //p2ph.EnablePcapAll("lena-epc-first");
 
