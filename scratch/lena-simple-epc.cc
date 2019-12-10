@@ -65,6 +65,8 @@ main (int argc, char *argv[])
   cmd.AddValue("useCa", "Whether to use carrier aggregation.", useCa);
   cmd.Parse(argc, argv);
 
+  Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue(false));
+
   if (useCa)
    {
      Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (useCa));

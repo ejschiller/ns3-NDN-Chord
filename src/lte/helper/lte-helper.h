@@ -42,6 +42,7 @@
 #include <ns3/component-carrier-enb.h>
 #include <ns3/cc-helper.h>
 #include <map>
+#include <ns3/lte-enb-rrc.h>
 
 namespace ns3 {
 
