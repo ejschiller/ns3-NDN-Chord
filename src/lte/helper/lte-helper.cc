@@ -76,8 +76,7 @@ NS_LOG_COMPONENT_DEFINE ("LteHelper");
 NS_OBJECT_ENSURE_REGISTERED (LteHelper);
 
 LteHelper::LteHelper (void)
-  : rrc (0),
-    m_fadingStreamsAssigned (false),
+  : m_fadingStreamsAssigned (false),
     m_imsiCounter (0),
     m_cellIdCounter {1}
 {
@@ -591,7 +590,7 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
     }
 
-  rrc = CreateObject<LteEnbRrc> ();
+  Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
   Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_enbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
   rrc->ConfigureCarriers (ccMap);
   

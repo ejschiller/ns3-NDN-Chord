@@ -113,8 +113,6 @@ public:
   static TypeId GetTypeId (void);
   virtual void DoDispose (void);
 
-  Ptr<LteEnbRrc> rrc;
-
   /** 
    * Set the EpcHelper to be used to setup the EPC network in
    * conjunction with the setup of the LTE radio access network.

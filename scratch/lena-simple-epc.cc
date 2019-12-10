@@ -29,6 +29,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/config-store.h"
+#include "ns3/lte-rrc-protocol-real.h"
 //#include "ns3/gtk-config-store.h"
 #include <vector>
 #include <cstdio>
@@ -172,6 +173,7 @@ main (int argc, char *argv[])
 	NetDeviceContainer& enbLteDevs = IndependentenbDevices[nn];
 	enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
 
+	
 	NetDeviceContainer& ueLteDevs = IndependentueDevices[nn];
 	ueLteDevs = lteHelper->InstallUeDevice (ueNodes);
 
@@ -190,6 +192,22 @@ main (int argc, char *argv[])
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 	}
 
+
+        for (uint16_t u = 0; u < numberOfNodes; u++) {
+		Ptr<LteUeRrcProtocolReal> rrc_protocol;
+		Ptr<NetDevice> ueLteDevice = ueLteDevs.Get(u);
+		rrc_protocol = ueLteDevice->GetObject<LteUeNetDevice>()->GetRrc()->GetObject<LteUeRrcProtocolReal> ();
+
+		if(!rrc_protocol)
+			NS_LOG (ns3::LOG_WARN, "NO RRC PROTOCOL!");
+
+		//if(rrc_protocol) 
+		//	rrc_protocol->SetenbNodes(&enbNodes);
+	
+		//else 
+		//	NS_LOG (ns3::LOG_WARN, "RRC PROTOCOL EMPTY!");
+        }
+	
 
 	// Attach one UE per eNodeB
   	for (uint16_t i = 0; i < numberOfNodes; i++) {
