@@ -32,6 +32,7 @@
 #include <ns3/lte-pdcp-sap.h>
 #include <ns3/lte-rlc-sap.h>
 #include <ns3/lte-rrc-header.h>
+#include <ns3/node-container.h>
 
 namespace ns3 {
 
@@ -90,6 +91,8 @@ public:
    * \param rrc the LTE UE RRC 
    */
   void SetUeRrc (Ptr<LteUeRrc> rrc);
+
+  void SetenbNodes (NodeContainer* enbNodes);
 
 
 private:
@@ -153,6 +156,7 @@ private:
   void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);
 
   Ptr<LteUeRrc> m_rrc; ///< the RRC
+  NodeContainer* m_enbNodes; /// enbnodes
   uint16_t m_rnti; ///< the RNTI
   LteUeRrcSapProvider* m_ueRrcSapProvider; ///< UE RRC SAP provider
   LteUeRrcSapUser* m_ueRrcSapUser; ///< UE RRC SAP user

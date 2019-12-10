@@ -42,9 +42,10 @@ const Time RRC_REAL_MSG_DELAY = MilliSeconds (0);
 NS_OBJECT_ENSURE_REGISTERED (LteUeRrcProtocolReal);
 
 LteUeRrcProtocolReal::LteUeRrcProtocolReal ()
-  :  m_ueRrcSapProvider (0),
+  :  m_enbNodes(0),
+    m_ueRrcSapProvider (0),
     m_enbRrcSapProvider (0)
-{
+    {
   m_ueRrcSapUser = new MemberLteUeRrcSapUser<LteUeRrcProtocolReal> (this);
   m_completeSetupParameters.srb0SapUser = new LteRlcSpecificLteRlcSapUser<LteUeRrcProtocolReal> (this);
   m_completeSetupParameters.srb1SapUser = new LtePdcpSpecificLtePdcpSapUser<LteUeRrcProtocolReal> (this);    
@@ -91,6 +92,12 @@ void
 LteUeRrcProtocolReal::SetUeRrc (Ptr<LteUeRrc> rrc)
 {
   m_rrc = rrc;
+}
+
+void 
+LteUeRrcProtocolReal::SetenbNodes (NodeContainer* enbNodes)
+{
+  m_enbNodes = enbNodes;
 }
 
 void 
