@@ -198,14 +198,11 @@ main (int argc, char *argv[])
 		Ptr<NetDevice> ueLteDevice = ueLteDevs.Get(u);
 		rrc_protocol = ueLteDevice->GetObject<LteUeNetDevice>()->GetRrc()->GetObject<LteUeRrcProtocolReal> ();
 
-		if(!rrc_protocol)
-			NS_LOG (ns3::LOG_WARN, "NO RRC PROTOCOL!");
-
-		//if(rrc_protocol) 
-		//	rrc_protocol->SetenbNodes(&enbNodes);
+		if(rrc_protocol) 
+			rrc_protocol->SetenbNodes(&enbNodes);
 	
-		//else 
-		//	NS_LOG (ns3::LOG_WARN, "RRC PROTOCOL EMPTY!");
+		else 
+			NS_LOG (ns3::LOG_WARN, "RRC PROTOCOL EMPTY!");
         }
 	
 

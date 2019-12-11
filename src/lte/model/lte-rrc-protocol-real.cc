@@ -244,9 +244,21 @@ LteUeRrcProtocolReal::SetEnbRrcSapProvider ()
 
   // walk list of all nodes to get the peer eNB
   Ptr<LteEnbNetDevice> enbDev;
-  NodeList::Iterator listEnd = NodeList::End ();
+  std::vector<Ptr<Node> >::iterator listBeginning;
+  std::vector<Ptr<Node> >::iterator listEnd;
+
+  if(enbNodes) {
+  	listBeginning = enbNodes->Begin();
+	listEnd = enbNodes->End();
+  }
+
+  else {
+        listBeginning = NodeList::Begin();
+  	listEnd = NodeList::End ();
+  }
+        
   bool found = false;
-  for (NodeList::Iterator i = NodeList::Begin (); 
+  for (NodeList::Iterator i = listBeginning; 
        (i != listEnd) && (!found); 
        ++i)
     {
