@@ -247,9 +247,9 @@ LteUeRrcProtocolReal::SetEnbRrcSapProvider ()
   std::vector<Ptr<Node> >::iterator listBeginning;
   std::vector<Ptr<Node> >::iterator listEnd;
 
-  if(enbNodes) {
-  	listBeginning = enbNodes->Begin();
-	listEnd = enbNodes->End();
+  if(m_enbNodes) {
+  	listBeginning = m_enbNodes->Begin();
+	listEnd = m_enbNodes->End();
   }
 
   else {
