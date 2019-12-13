@@ -18,12 +18,14 @@
  * Author: Jaume Nin <jaume.nin@cttc.cat>
  */
 
+
 #include "ns3/lte-helper.h"
 #include "ns3/epc-helper.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
+#include "ns3/internet-apps-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/lte-module.h"
 #include "ns3/applications-module.h"
@@ -72,8 +74,10 @@ main (int argc, char *argv[])
    {
      Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (useCa));
      Config::SetDefault ("ns3::LteHelper::NumberOfComponentCarriers", UintegerValue (2));
-     Config::SetDefault ("ns3::LteHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
+     Config::SetDefault ("ns3::LteGHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
    }
+
+  Config::SetDefault ("ns3::Ipv4RawSocketImpl::Protocol", StringValue ("2"));
 
   // Create a single RemoteHost
   NodeContainer remoteHostContainer;
@@ -81,6 +85,8 @@ main (int argc, char *argv[])
   Ptr<Node> remoteHost = remoteHostContainer.Get (0);
   InternetStackHelper internet;
   internet.Install (remoteHostContainer);
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
 
   std::vector<Ptr<LteHelper>> IndependentNetworks(numberOfNetworks);
   std::vector<Ptr<PointToPointEpcHelper>> IndependentEpcs(numberOfNetworks);
@@ -89,7 +95,6 @@ main (int argc, char *argv[])
   std::vector<Ipv4AddressHelper> IndependentAddress(numberOfNetworks);
   std::vector<Ipv4InterfaceContainer> IndependentInterface(numberOfNetworks);
   std::vector<Ipv4Address> IndependentremoteHostAddr(numberOfNetworks);
-  std::vector<Ipv4StaticRoutingHelper> Independentipv4RoutingHelper(numberOfNetworks);
   std::vector<NodeContainer> IndependentueNodes(numberOfNetworks);
   std::vector<NodeContainer> IndependentenbNodes(numberOfNetworks);
   std::vector<Ptr<ListPositionAllocator>> IndependentPositionAllocators(numberOfNetworks);
@@ -140,12 +145,13 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer& internetIpIfaces = IndependentInterface[nn];
   	internetIpIfaces = ipv4h.Assign (internetDevices);
 	Ipv4Address& remoteHostAddr = IndependentremoteHostAddr[nn];
+        // interface 0 is localhost, nn is the p2p device
+        remoteHostAddr = internetIpIfaces.GetAddress (nn);
+  	//remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (addressing.str().c_str()), Ipv4Mask ("255.255.0.0"), nn + 1);
+        remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (s1ubaseaddress.str().c_str()), Ipv4Mask ("255.255.0.0"), nn + 1);
+	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (x2baseaddress.str().c_str()), Ipv4Mask ("255.255.0.0"), nn + 1);
+	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (uebaseaddress.str().c_str()), Ipv4Mask ("255.255.0.0"), nn + 1);
 
-  	// interface 0 is localhost, nn is the p2p device
-  	remoteHostAddr = internetIpIfaces.GetAddress (nn);
-	Ipv4StaticRoutingHelper& ipv4RoutingHelper = Independentipv4RoutingHelper[numberOfNetworks];
-	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
-  	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address (addressing.str().c_str()), Ipv4Mask ("255.0.0.0"), nn);
 
 	NodeContainer& ueNodes = IndependentueNodes[nn];
   	NodeContainer& enbNodes = IndependentenbNodes[nn];
@@ -213,62 +219,49 @@ main (int argc, char *argv[])
 
   }
 
-/*
-
-  uint16_t otherPort = 3000;
-  ApplicationContainer clientApps;
-  ApplicationContainer serverApps;
-
-  for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
-    {
-      ++ulPort;
-      ++otherPort;
-      PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
-      PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), otherPort));
-      serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
-      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
-      serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
-
-      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
-      dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
-      dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
-
-      UdpClientHelper ulClient (remoteHostAddr, ulPort);
-      ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
-      ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
-
-      UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
-      client.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
-      client.SetAttribute ("MaxPackets", UintegerValue(1000000));
-
-      clientApps.Add (dlClient.Install (remoteHost));
-      clientApps.Add (ulClient.Install (ueNodes.Get(u)));
-      if (u+1 < ueNodes.GetN ())
-        {
-          clientApps.Add (client.Install (ueNodes.Get(u+1)));
-        }
-      else
-        {
-          clientApps.Add (client.Install (ueNodes.Get(0)));
-        }
-    }
-
-*/
-
-  //serverApps.Start (Seconds (0.01));
-  //clientApps.Start (Seconds (0.01));
-
-
+  // LTE stats
   for(uint16_t nn = 0; nn < numberOfNetworks; nn++) {
 	Ptr<LteHelper>& lteHelper = IndependentNetworks[nn];
-	lteHelper->EnableTraces ();
+
+	// TODO: LTE stats do not work due to the fact that they use NodeList to implement callback functions :(
+	// lteHelper->EnableTraces ();
   }
 
-  // Uncomment to enable PCAP tracing
-  //p2ph.EnablePcapAll("lena-epc-first");
+  // PCAP support on P2P interfaces
+  for(uint16_t nn = 0; nn < numberOfNetworks; nn++) {
+        PointToPointHelper& p2ph = IndependentLinks[nn];
+        p2ph.EnablePcapAll("lena-epc");
+  }
 
-  Simulator::Stop(Seconds(simTime));
+  // Print ALL static routing
+  Ptr<OutputStreamWrapper> r_tables = new OutputStreamWrapper ("routing_tables.txt", std::ios::out);
+  remoteHostStaticRouting->PrintRoutingTable(r_tables, Time::Unit::S);
+
+  ApplicationContainer apps;
+
+  NS_LOG_INFO ("Create Sink.");
+  // instantiate a sink helper
+  PacketSinkHelper sink = PacketSinkHelper ("ns3::Ipv4RawSocketFactory", InetSocketAddress(Ipv4Address::GetAny ()));
+  apps = sink.Install (IndependentPgws[0]);
+  apps.Start (Seconds (0.0));
+  apps.Stop (Seconds (11.0));
+
+  NS_LOG_INFO ("Create Pinger.");
+  // instantiate a ping helper
+  V4PingHelper ping = V4PingHelper (IndependentremoteHostAddr[0]);
+  //V4PingHelper ping = V4PingHelper (IndependentPgws[0]);
+  NodeContainer pingers;
+  pingers.Add (IndependentueNodes[0].Get (0));
+  apps = ping.Install (pingers);
+  apps.Start (Seconds (2.0));
+  apps.Stop (Seconds (5.0));
+ 
+
+  // PacketSinkHelper sink = PacketSinkHelper ("ns3::Ipv4RawSocketFactory", IndependentremoteHostAddr[0]);
+  // apps = sink.Install (remoteHost);
+ 
+
+  Simulator::Stop(Seconds(12));
   Simulator::Run();
 
   /*GtkConfigStore config;

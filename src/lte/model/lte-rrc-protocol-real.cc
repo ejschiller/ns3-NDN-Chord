@@ -248,11 +248,16 @@ LteUeRrcProtocolReal::SetEnbRrcSapProvider ()
   std::vector<Ptr<Node> >::const_iterator listEnd;
 
   if(m_enbNodes) {
+
+	NS_LOG(ns3::LOG_WARN, "Going through the provided list of ENBs...");
+
   	listBeginning = m_enbNodes->Begin();
 	listEnd = m_enbNodes->End();
   }
 
   else {
+	NS_LOG(ns3::LOG_WARN, "Going through the regular list of nodes...");
+
         listBeginning = NodeList::Begin();
   	listEnd = NodeList::End ();
   }
